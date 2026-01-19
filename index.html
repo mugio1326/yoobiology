@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>YOO BIO — Komunikasi Antar Sel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#0b1224;
+      --bg2:#020617;
+      --card: rgba(15,23,42,0.62);
+      --stroke: rgba(148,163,184,0.18);
+      --text:#e5e7eb;
+      --muted: rgba(229,231,235,0.75);
+      --cyan:#38bdf8;
+      --violet:#a855f7;
+      --indigo:#6366f1;
+      --good:#34d399;
+      --bad:#fb7185;
+      --shadow: 0 20px 60px rgba(0,0,0,0.45);
+      --radius: 22px;
+    }
+
+    *{ margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+    html{ scroll-behavior:smooth; }
+    body{
+      min-height:100vh;
+      background: radial-gradient(circle at top, #121b36, var(--bg2));
+      color: var(--text);
+      line-height: 1.75;
+      overflow-x:hidden;
+    }
+
+    /* Scroll progress */
+    .progress{
+      position: fixed;
+      top:0; left:0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      z-index: 2000;
+      box-shadow: 0 10px 30px rgba(56,189,248,0.35);
+    }
+
+    header{
+      position: fixed;
+      top:0; left:0;
+      width:100%;
+      z-index: 1500;
+      padding: 14px 6%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background: rgba(2,6,23,0.72);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(148,163,184,0.14);
+    }
+    header .brand{ display:flex; align-items:center; gap:12px; user-select:none; }
+    .logo{
+      width:34px; height:34px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 20%, var(--cyan), var(--indigo));
+      box-shadow: 0 10px 30px rgba(56,189,248,0.18);
+      position: relative;
+      overflow:hidden;
+    }
+    .logo:after{
+      content:"";
+      position:absolute;
+      inset:-30%;
+      background: radial-gradient(circle, rgba(168,85,247,0.55), transparent 60%);
+      transform: rotate(25deg);
+    }
+    header h1{
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: var(--cyan);
+      font-size: 1.05rem;
+    }
+
+    header nav{ display:flex; align-items:center; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+    header nav a{
+      color: var(--text);
+      text-decoration:none;
+      font-weight: 700;
+      opacity: 0.9;
+      padding: 10px 12px;
+      border-radius: 12px;
+      transition: 0.2s;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    header nav a:hover{ background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.16); }
+    header nav a.active{
+      background: linear-gradient(90deg, rgba(56,189,248,0.18), rgba(168,85,247,0.12));
+      border: 1px solid rgba(56,189,248,0.22);
+      opacity: 1;
+    }
+
+    section{
+      min-height:100vh;
+      padding: 120px 8% 80px;
+      position: relative;
+    }
+    .wrap{ position: relative; z-index: 1; }
+
+    /* Background particles */
+    .particles{
+      position: fixed;
+      inset: 0;
+      pointer-events:none;
+      z-index: 0;
+      opacity: 0.65;
+    }
+    .particle{
+      position:absolute;
+      width: 6px; height: 6px;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.22);
+      filter: blur(0.2px);
+    }
+
+    /* HERO */
+    .hero{ display:flex; align-items:center; justify-content:center; text-align:center; }
+    .hero .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(15,23,42,0.45);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.92rem;
+      margin-bottom: 18px;
+    }
+    .chip{
+      width: 10px; height:10px;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      box-shadow: 0 0 30px rgba(56,189,248,0.25);
+    }
+
+    /* Judul gradient + fallback biar tidak hilang */
+    .hero h2{
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 900;
+      line-height: 1.05;
+
+      /* fallback */
+      color: #e5e7eb;
+
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p{
+      margin-top: 22px;
+      max-width: 900px;
+      margin-inline:auto;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    .ctaRow{
+      margin-top: 34px;
+      display:flex;
+      gap: 12px;
+      justify-content:center;
+      flex-wrap: wrap;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      text-decoration:none;
+      font-weight: 900;
+      transition: 0.2s;
+      border: 1px solid rgba(148,163,184,0.16);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    }
+    .btn.primary{
+      color: #06101b;
+      background: linear-gradient(90deg, var(--cyan), var(--indigo));
+      border: none;
+    }
+    .btn.primary:hover{ transform: translateY(-2px); }
+    .btn.ghost{
+      color: var(--text);
+      background: rgba(15,23,42,0.35);
+    }
+    .btn.ghost:hover{ background: rgba(56,189,248,0.10); transform: translateY(-2px); }
+
+    .title{
+      font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+      font-weight: 900;
+      margin-bottom: 14px;
+      color: var(--cyan);
+    }
+    .subtitle{
+      color: var(--muted);
+      max-width: 980px;
+      margin-bottom: 26px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+    }
+    .card{
+      grid-column: span 12;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow:hidden;
+    }
+    .card:before{
+      content:"";
+      position:absolute;
+      inset: -50% -50% auto -50%;
+      height: 180px;
+      background: radial-gradient(circle, rgba(56,189,248,0.18), transparent 65%);
+      transform: rotate(10deg);
+    }
+    .card > *{ position: relative; z-index:1; }
+
+    .two .card{ grid-column: span 12; }
+    @media(min-width: 960px){
+      .two .card{ grid-column: span 6; }
+      .three .card{ grid-column: span 4; }
+    }
+
+    .tag{
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      color: rgba(229,231,235,0.95);
+      margin-bottom: 10px;
+    }
+    .dot{
+      width: 10px; height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      box-shadow: 0 0 30px rgba(168,85,247,0.2);
+    }
+
+    ul{ padding-left: 18px; color: var(--muted); }
+    li{ margin: 6px 0; }
+
+    .pillRow{ display:flex; gap:10px; flex-wrap: wrap; margin-top: 12px; }
+    .pill{
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(2,6,23,0.25);
+      color: rgba(229,231,235,0.85);
+      font-weight: 750;
+      font-size: 0.92rem;
+    }
+
+    /* Accordion */
+    .accItem{
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(2,6,23,0.18);
+      border-radius: 18px;
+      overflow:hidden;
+      margin-top: 12px;
+    }
+    .accBtn{
+      width:100%;
+      text-align:left;
+      padding: 16px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 16px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .accBtn small{ color: var(--muted); font-weight: 700; }
+    .accPanel{
+      max-height: 0px;
+      overflow:hidden;
+      transition: max-height 0.35s ease;
+      padding: 0 16px;
+    }
+    .accPanel .inner{
+      padding: 0 0 16px;
+      color: var(--muted);
+    }
+    .chev{
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      display:grid; place-items:center;
+      background: rgba(56,189,248,0.12);
+      border: 1px solid rgba(56,189,248,0.18);
+      flex:0 0 auto;
+      transition: 0.25s;
+    }
+    .accItem.open .chev{ transform: rotate(180deg); }
+
+    /* Simulasi */
+    .lab{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media(min-width: 980px){
+      .lab{ grid-template-columns: 1.2fr 0.8fr; align-items: start; }
+    }
+    .stage{
+      background: rgba(2,6,23,0.30);
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: var(--radius);
+      padding: 18px;
+      position: relative;
+      overflow:hidden;
+      min-height: 360px;
+    }
+    .stage .hint{
+      position:absolute;
+      top: 14px; left: 14px;
+      color: rgba(229,231,235,0.88);
+      font-weight: 900;
+      font-size: 0.92rem;
+      background: rgba(15,23,42,0.55);
+      border: 1px solid rgba(148,163,184,0.18);
+      padding: 10px 12px;
+      border-radius: 14px;
+    }
+
+    svg{ width:100%; height: 360px; display:block; }
+    .node{ filter: drop-shadow(0 12px 20px rgba(0,0,0,0.25)); }
+    .glow{ opacity: 0; }
+    .path{ opacity: 0.25; }
+    .on .glow{ opacity: 0.9; }
+    .on .path{ opacity: 0.95; }
+
+    .panel{
+      background: rgba(15,23,42,0.50);
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .panel h4{ font-size: 1.1rem; margin-bottom: 8px; color: rgba(229,231,235,0.95); font-weight:900; }
+    .panel p{ color: var(--muted); margin-bottom: 12px; }
+    .miniBtns{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .mini{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(2,6,23,0.25);
+      color: rgba(229,231,235,0.92);
+      cursor:pointer;
+      font-weight: 900;
+      transition: 0.2s;
+    }
+    .mini:hover{ transform: translateY(-2px); background: rgba(56,189,248,0.10); }
+    .mini.primary{
+      border: none;
+      background: linear-gradient(90deg, rgba(56,189,248,0.95), rgba(99,102,241,0.88));
+      color: #06101b;
+    }
+
+    /* Quiz */
+    .quizQ{
+      margin-top: 10px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(2,6,23,0.18);
+    }
+    .quizQ strong{ display:block; margin-bottom: 10px; font-weight:900; }
+    .opt{
+      width:100%;
+      text-align:left;
+      padding: 12px 14px;
+      margin-top: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(15,23,42,0.45);
+      color: rgba(229,231,235,0.92);
+      cursor:pointer;
+      transition: 0.2s;
+      font-weight: 800;
+    }
+    .opt:hover{ transform: translateY(-2px); background: rgba(56,189,248,0.12); }
+    .opt.correct{ border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.12); }
+    .opt.wrong{ border-color: rgba(251,113,133,0.5); background: rgba(251,113,133,0.10); }
+    .score{
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px dashed rgba(148,163,184,0.25);
+      color: rgba(229,231,235,0.92);
+      background: rgba(2,6,23,0.18);
+      display:flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-weight: 900;
+    }
+
+    footer{
+      text-align:center;
+      padding: 50px 8%;
+      color: rgba(229,231,235,0.6);
+      font-size: 0.92rem;
+      border-top: 1px solid rgba(148,163,184,0.14);
+      background: rgba(2,6,23,0.35);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="particles" id="particles"></div>
+
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>YOO BIO</h1>
+    </div>
+    <nav>
+      <a href="#materi" data-link="materi">Materi</a>
+      <a href="#reseptor" data-link="reseptor">Reseptor</a>
+      <a href="#jalur" data-link="jalur">Jalur</a>
+   <a href="#simulasi" data-link="simulasi">Simulasi</a>
+   <a href="#video pendukung" data-link="video pendukung">Video</a>
+      <a href="#kuis" data-link="kuis">Kuis</a>
+      <a href="#Pembuat" data-link="Pembuat">Pembuat</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="kicker"><span class="chip"></span> Biologi Sel Molekuler — Komunikasi Antar Sel</div>
+      <h2>Yoo Bio<br>Pendidikan Biologi<br>Universitas Kuningan</h2>
+      <p>
+      YOO BIO adalah ruang belajar interaktif untuk mengeksplorasi bagaimana sel mengirim, menerima, dan menerjemahkan sinyal biologis. Kamu akan menjelajahi tipe komunikasi sel, mengenal berbagai reseptor, memahami jalur transduksi (second messenger, fosforilasi, cascade), serta melihat bagaimana sinyal diperkuat dan dihentikan agar sistem tubuh tetap seimbang. Dengan animasi transisi dan simulasi, konsep yang rumit terasa lebih visual, runtut, dan mudah dipahami.
+      </p>
+      <div class="ctaRow">
+        <a class="btn primary" href="#materi">Mulai Belajar</a>
+        <a class="btn ghost" href="#simulasi">Coba Simulasi</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MATERI -->
+  <section id="materi">
+    <div class="wrap">
+      <div class="title">Konsep Dasar Komunikasi Antar Sel</div>
+      <div class="subtitle">
+        Komunikasi antar sel merupakan mekanisme fundamental yang memungkinkan sel-sel dalam organisme multiseluler bekerja secara terkoordinasi. Melalui sistem sinyal biologis, sel dapat mendeteksi perubahan lingkungan, beradaptasi terhadap rangsangan, serta mengatur proses fisiologis seperti pertumbuhan, metabolisme, diferensiasi, dan respons imun. Gangguan pada sistem komunikasi ini dapat menyebabkan berbagai penyakit, termasuk kanker, diabetes, dan gangguan neurodegeneratif.
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <div class="tag"><span class="dot"></span> Komponen Utama</div>
+          <ul>
+            Komponen utama dalam komunikasi antar sel melibatkan interaksi terkoordinasi antara ligand, reseptor, sistem transduksi sinyal, efektor, dan respons seluler. Ligand berfungsi sebagai molekul pembawa pesan yang diproduksi oleh sel pengirim dan dapat berupa hormon, neurotransmiter, growth factor, sitokin, maupun molekul gas seperti nitric oxide. Setelah ligand mencapai sel target, ia akan berikatan dengan reseptor spesifik yang terletak di membran plasma atau di dalam sel. Ikatan ini memicu aktivasi rangkaian transduksi sinyal berupa reaksi berantai, seperti fosforilasi protein atau aktivasi second messenger, yang selanjutnya diteruskan ke protein efektor. Efektor kemudian menghasilkan respons biologis tertentu, baik berupa perubahan aktivitas enzim, pembukaan kanal ion, maupun regulasi ekspresi gen, sehingga memungkinkan sel merespons sinyal secara tepat dan terkontrol.
+          </ul>
+          <div class="pillRow">
+            <span class="pill">Spesifisitas</span>
+            <span class="pill">Amplifikasi</span>
+            <span class="pill">Integrasi</span>
+            <span class="pill">Terminasi</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> Jenis Komunikasi</div>
+          <ul>
+            Komunikasi antar sel dapat terjadi melalui berbagai mekanisme yang dibedakan berdasarkan jarak dan cara penyampaian sinyal. Pada komunikasi autokrin, sel merespons sinyal yang dihasilkannya sendiri, mekanisme ini sering ditemukan pada sel sistem imun dan sel kanker. Komunikasi parakrin melibatkan penyebaran sinyal ke sel-sel di sekitarnya dan berperan penting dalam diferensiasi jaringan dan perkembangan embrio. Sebaliknya, komunikasi endokrin memungkinkan sinyal menjangkau sel target yang jauh melalui aliran darah, seperti pada kerja hormon. Selain itu, komunikasi juxtakrin memerlukan kontak langsung antar membran sel, sementara komunikasi sinaptik terjadi secara khusus pada sistem saraf melalui celah sinaps. Beberapa sel juga terhubung langsung melalui gap junction, yang memungkinkan pertukaran ion dan molekul kecil secara cepat untuk menyelaraskan aktivitas seluler.
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tag"><span class="dot"></span> Kecepatan Respons</div>
+        <ul>
+          Kecepatan respons sel terhadap sinyal sangat bergantung pada mekanisme transduksi yang terlibat. Respons cepat umumnya terjadi melalui aktivasi protein yang telah tersedia di dalam sel, seperti enzim atau kanal ion, sehingga perubahan fungsi sel dapat terjadi dalam hitungan detik hingga menit. Respons jenis ini penting untuk proses yang memerlukan reaksi segera, seperti kontraksi otot atau transmisi impuls saraf. Sebaliknya, respons lambat melibatkan aktivasi faktor transkripsi yang mengarah pada perubahan ekspresi gen dan sintesis protein baru. Proses ini membutuhkan waktu lebih lama, mulai dari jam hingga hari, tetapi menghasilkan perubahan yang lebih stabil dan bertahan lama dalam fungsi sel.
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESEPTOR -->
+  <section id="reseptor">
+    <div class="wrap">
+      <div class="title">Reseptor: Pintu Masuk Informasi</div>
+      <div class="subtitle">
+        Sinyal yang sama bisa memicu respons berbeda karena setiap tipe sel punya kombinasi reseptor,
+        protein transduksi, dan efektor yang berbeda.
+      </div>
+
+      <div class="grid three">
+        <div class="card">
+          <div class="tag"><span class="dot"></span> GPCR</div>
+          <p style="color:var(--muted)">
+            Reseptor 7 transmembran. Aktivasi → G-protein → second messenger (cAMP / IP3-DAG) → PKA/PKC.
+          </p>
+          <ul>
+            <li>Ligand: adrenalin, glukagon, histamin</li>
+            <li>Output: metabolisme, kontraksi, sekresi</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> RTK</div>
+          <p style="color:var(--muted)">
+            Ligand → dimerisasi → autofosforilasi tirosin → docking protein → jalur MAPK / PI3K-Akt.
+          </p>
+          <ul>
+            <li>Ligand: insulin, EGF, PDGF</li>
+            <li>Output: pertumbuhan, survival, diferensiasi</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> Kanal Ion</div>
+          <p style="color:var(--muted)">
+            Ligand membuka kanal → perubahan potensial membran (respons sangat cepat).
+          </p>
+          <ul>
+            <li>Contoh: reseptor ACh nikotinik</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> Reseptor Intrasel</div>
+          <p style="color:var(--muted)">
+            Ligand lipofilik (steroid/tiroid) masuk sel → reseptor sitosol/nukleus → faktor transkripsi.
+          </p>
+          <ul>
+            <li>Output: perubahan ekspresi gen</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> JAK/STAT</div>
+          <p style="color:var(--muted)">
+            Sitokin → aktivasi JAK → fosforilasi STAT → STAT masuk nukleus.
+          </p>
+          <ul>
+            <li>Output: regulasi imun & inflamasi</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> Notch (Juxtakrin)</div>
+          <p style="color:var(--muted)">
+            Kontak sel-ke-sel → domain intrasel Notch masuk nukleus → diferensiasi jaringan.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tag"><span class="dot"></span> Konsep Lanjut (klik untuk buka)</div>
+
+        <div class="accItem">
+          <button class="accBtn">
+            <span>Second Messenger <small>— cAMP, IP3, DAG, Ca²⁺</small></span>
+            <span class="chev">⌄</span>
+          </button>
+          <div class="accPanel">
+            <div class="inner">
+              Second messenger mempercepat penyebaran sinyal dan menciptakan amplifikasi:
+              <ul>
+                <li><b>cAMP</b> → aktifkan PKA → fosforilasi target.</li>
+                <li><b>IP3</b> → lepaskan Ca²⁺ dari RE.</li>
+                <li><b>DAG</b> + Ca²⁺ → aktifkan PKC.</li>
+                <li><b>Ca²⁺</b> → sinyal universal (kontraksi, sekresi, enzim).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="accItem">
+          <button class="accBtn">
+            <span>Amplifikasi & Crosstalk <small>— satu sinyal, banyak efek</small></span>
+            <span class="chev">⌄</span>
+          </button>
+          <div class="accPanel">
+            <div class="inner">
+              <ul>
+                <li><b>Amplifikasi</b>: 1 reseptor aktif → banyak mediator → output besar.</li>
+                <li><b>Crosstalk</b>: jalur A memodulasi jalur B (bisa sinergi atau saling menghambat).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="accItem">
+          <button class="accBtn">
+            <span>Terminasi Sinyal <small>— mematikan pesan</small></span>
+            <span class="chev">⌄</span>
+          </button>
+          <div class="accPanel">
+            <div class="inner">
+              Contoh terminasi:
+              <ul>
+                <li>Desensitisasi reseptor (mis. GPCR → arrestin).</li>
+                <li>Gα menghidrolisis GTP → GDP (mematikan G-protein).</li>
+                <li>Fosfatase menghapus fosfat dari protein terfosforilasi.</li>
+                <li>Pompa Ca²⁺ menurunkan Ca²⁺ sitosol.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- JALUR -->
+  <section id="jalur">
+    <div class="wrap">
+      <div class="title">Jalur Transduksi Sinyal</div>
+      <div class="subtitle">
+        Fokuskan pada pola: <b>reseptor</b> → <b>mediator</b> → <b>target</b> → <b>output</b>.
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <div class="tag"><span class="dot"></span> cAMP → PKA</div>
+          <ul>
+            <li>GPCR (Gs/Gi) → adenylyl cyclase → cAMP</li>
+            <li>cAMP → PKA → fosforilasi enzim metabolik</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> IP3/DAG → Ca²⁺/PKC</div>
+          <ul>
+            <li>GPCR (Gq) → PLC → IP3 + DAG</li>
+            <li>IP3 → Ca²⁺ dari RE; DAG + Ca²⁺ → PKC</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> RTK → MAPK/ERK</div>
+          <ul>
+            <li>RTK → Ras → Raf → MEK → ERK</li>
+            <li>ERK mempengaruhi faktor transkripsi → proliferasi/diferensiasi</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="tag"><span class="dot"></span> JAK/STAT</div>
+          <ul>
+            <li>Ligand → JAK aktif → STAT → nukleus → ekspresi gen</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIMULASI -->
+  <section id="simulasi">
+    <div class="wrap">
+      <div class="title">Simulasi: Ligand → Reseptor → Cascade</div>
+      <div class="subtitle">
+        Klik tombol untuk melihat alur sinyal “menyala”.
+      </div>
+
+      <div class="lab">
+        <div class="stage card" style="box-shadow:none;">
+          <div class="hint">Klik: <b>Aktifkan Sinyal</b> / <b>Reset</b> / <b>Mode Jalur</b></div>
+
+          <svg viewBox="0 0 900 360" aria-label="diagram sinyal">
+            <rect x="0" y="190" width="900" height="70" fill="rgba(148,163,184,0.08)"></rect>
+            <rect x="0" y="195" width="900" height="3" fill="rgba(56,189,248,0.20)"></rect>
+            <rect x="0" y="255" width="900" height="3" fill="rgba(168,85,247,0.18)"></rect>
+
+            <circle id="ligand" class="node" cx="120" cy="120" r="26" fill="rgba(56,189,248,0.95)"></circle>
+            <circle id="ligandGlow" class="glow" cx="120" cy="120" r="44" fill="rgba(56,189,248,0.18)"></circle>
+            <text x="120" y="120" text-anchor="middle" dominant-baseline="middle" fill="#06101b" font-weight="900">L</text>
+            <text x="120" y="165" text-anchor="middle" fill="rgba(229,231,235,0.75)" font-weight="900">Ligand</text>
+
+            <rect id="receptor" class="node" x="300" y="130" width="70" height="160" rx="18" fill="rgba(99,102,241,0.9)"></rect>
+            <rect id="receptorGlow" class="glow" x="284" y="118" width="102" height="186" rx="26" fill="rgba(99,102,241,0.16)"></rect>
+            <text x="335" y="115" text-anchor="middle" fill="rgba(229,231,235,0.82)" font-weight="900">Reseptor</text>
+
+            <path id="p1" class="path" d="M150 120 C220 120 240 170 300 170" stroke="rgba(56,189,248,0.9)" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <path id="p2" class="path" d="M370 250 C430 300 520 300 560 260" stroke="rgba(168,85,247,0.9)" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <path id="p3" class="path" d="M590 245 C660 210 720 210 780 220" stroke="rgba(56,189,248,0.9)" stroke-width="6" fill="none" stroke-linecap="round"></path>
+
+            <circle id="transducer" class="node" cx="560" cy="260" r="30" fill="rgba(168,85,247,0.90)"></circle>
+            <circle id="transducerGlow" class="glow" cx="560" cy="260" r="52" fill="rgba(168,85,247,0.16)"></circle>
+            <text x="560" y="260" text-anchor="middle" dominant-baseline="middle" fill="#06101b" font-weight="900">T</text>
+            <text x="560" y="315" text-anchor="middle" fill="rgba(229,231,235,0.75)" font-weight="900">Transduksi</text>
+
+            <circle id="response" class="node" cx="790" cy="220" r="30" fill="rgba(52,211,153,0.92)"></circle>
+            <circle id="responseGlow" class="glow" cx="790" cy="220" r="52" fill="rgba(52,211,153,0.16)"></circle>
+            <text x="790" y="220" text-anchor="middle" dominant-baseline="middle" fill="#06101b" font-weight="900">R</text>
+            <text x="790" y="275" text-anchor="middle" fill="rgba(229,231,235,0.75)" font-weight="900">Respons</text>
+
+            <ellipse id="nucleus" cx="790" cy="105" rx="60" ry="34" fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.22)"></ellipse>
+            <text x="790" y="105" text-anchor="middle" dominant-baseline="middle" fill="rgba(229,231,235,0.75)" font-weight="900">Nukleus</text>
+            <path id="p4" class="path" d="M790 190 C790 165 790 150 790 140" stroke="rgba(52,211,153,0.9)" stroke-width="6" fill="none" stroke-linecap="round"></path>
+          </svg>
+        </div>
+
+        <div class="panel">
+          <h4 id="modeTitle">Mode: GPCR (cAMP / IP3-DAG)</h4>
+          <p id="modeDesc">
+            GPCR mengaktifkan G-protein. Output umum: cAMP→PKA atau PLC→IP3/DAG→Ca²⁺/PKC.
+          </p>
+
+          <div class="miniBtns">
+            <button class="mini primary" id="btnRun">Aktifkan Sinyal</button>
+            <button class="mini" id="btnReset">Reset</button>
+            <button class="mini" id="btnMode">Mode Jalur: GPCR</button>
+          </div>
+
+          <div style="margin-top:14px; color: var(--muted); font-weight:750;">
+            <b>Tip:</b> jelaskan tiap tahap: ligand → reseptor → mediator → respons.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- VIDEO 1 -->
+<div style="margin-bottom:48px">
+  <div style="
+    background: rgba(15,23,42,0.55);
+    border: 1px solid rgba(148,163,184,0.18);
+    border-radius: 22px;
+    padding: 18px;
+  ">
+    <iframe
+      width="100%"
+      height="480"
+      src="https://www.youtube.com/embed/b5bVxslwDGw"
+      title="Video 1"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      style="border-radius:18px">
+    </iframe>
+
+    <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="https://youtu.be/b5bVxslwDGw?si=SCoOm9zzLMkYjVeH"
+         target="_blank"
+         style="
+           display:inline-block;
+           padding:12px 16px;
+           border-radius:14px;
+           background: linear-gradient(90deg, #38bdf8, #6366f1);
+           color:#06101b;
+           font-weight:900;
+           text-decoration:none;
+         ">
+        Tonton di YouTube
+      </a>
+
+      <span style="color:rgba(229,231,235,0.7); font-weight:700;">
+        Jika video tidak tampil di web, klik tombol ini.
+      </span>
+    </div>
+
+    <p style="color:rgba(229,231,235,0.8); margin-top:14px">
+      Video ini menjelaskan konsep dasar komunikasi antar sel, termasuk mekanisme pengenalan sinyal,
+      aktivasi reseptor, dan respons sel target.
+    </p>
+  </div>
+</div>
+
+<!-- VIDEO 2 -->
+<div>
+  <div style="
+    background: rgba(15,23,42,0.55);
+    border: 1px solid rgba(148,163,184,0.18);
+    border-radius: 22px;
+    padding: 18px;
+  ">
+    <iframe
+      width="100%"
+      height="480"
+      src="https://www.youtube.com/embed/Qz2Af8FCPRA"
+      title="Video 2"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      style="border-radius:18px">
+    </iframe>
+
+    <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="https://youtu.be/Qz2Af8FCPRA?si=7w7vI4rcdEIIsUuN"
+         target="_blank"
+         style="
+           display:inline-block;
+           padding:12px 16px;
+           border-radius:14px;
+           background: rgba(15,23,42,0.25);
+           border:1px solid rgba(148,163,184,0.22);
+           color:#e5e7eb;
+           font-weight:900;
+           text-decoration:none;
+         ">
+        Tonton di YouTube
+      </a>
+
+      <span style="color:rgba(229,231,235,0.7); font-weight:700;">
+        (Beberapa video memang tidak mengizinkan embed.)
+      </span>
+    </div>
+
+    <p style="color:rgba(229,231,235,0.8); margin-top:14px">
+      Video ini memvisualisasikan jalur transduksi sinyal dan peran molekul perantara
+      dalam menghasilkan respons biologis pada sel target.
+    </p>
+  </div>
+</div>
+
+<!-- ================= VIDEO ANIMASI BUATAN SENDIRI ================= -->
+<div style="margin-top:64px">
+  <h3 style="color:#38bdf8; font-size:1.8rem; margin-bottom:12px">
+    Video Animasi Komunikasi Antar Sel
+  </h3>
+
+  <p style="color:rgba(229,231,235,0.75); max-width:900px; margin-bottom:24px">
+    Video animasi berikut merupakan animasi buatan penulis yang bertujuan
+    untuk memvisualisasikan proses komunikasi antar sel, mulai dari
+    pengikatan ligand dengan reseptor hingga terbentuknya respons seluler.
+  </p>
+
+  <div style="
+    background: rgba(15,23,42,0.55);
+    border: 1px solid rgba(148,163,184,0.18);
+    border-radius: 22px;
+    padding: 18px;
+    max-width: 900px;
+  ">
+    <video controls style="width:100%; border-radius:16px">
+      <source src="animasiksel.mp4" type="video/mp4">
+      Browser kamu tidak mendukung pemutaran video.
+    </video>
+
+    <p style="margin-top:14px; color:rgba(229,231,235,0.8); font-size:0.95rem">
+      Animasi ini menunjukkan tahapan komunikasi antar sel secara bertahap,
+      meliputi pengenalan sinyal, aktivasi reseptor, transduksi sinyal,
+      dan respons biologis yang dihasilkan oleh sel target.
+    </p>
+  </div>
+
+  <p style="text-align:center; margin-top:40px; color:rgba(229,231,235,0.7)">
+    Setelah memahami konsep melalui simulasi dan video animasi,
+    lanjutkan ke kuis berikut untuk menguji pemahaman kamu.
+  </p>
+</div>
+<!-- ================= AKHIR VIDEO ANIMASI ================= -->
+
+  <!-- KUIS -->
+  <section id="kuis">
+    <div class="wrap">
+      <div class="title">Kuis Interaktif</div>
+      <div class="subtitle">Jawab 5 soal. Skor muncul otomatis (1 klik per soal).</div>
+
+      <div class="card">
+        <div class="score">
+          <span>Skor: <span id="scoreNow">0</span>/5</span>
+          <span>Status: <span id="scoreMsg">Belum selesai</span></span>
+        </div>
+
+        <div class="quizQ" data-answer="A">
+          <strong>1) Komunikasi yang bekerja pada sel itu sendiri disebut…</strong>
+          <button class="opt" data-opt="A">Autokrin</button>
+          <button class="opt" data-opt="B">Endokrin</button>
+          <button class="opt" data-opt="C">Sinaptik</button>
+        </div>
+
+        <div class="quizQ" data-answer="C">
+          <strong>2) Reseptor dengan 7 domain transmembran biasanya adalah…</strong>
+          <button class="opt" data-opt="A">RTK</button>
+          <button class="opt" data-opt="B">Reseptor steroid intrasel</button>
+          <button class="opt" data-opt="C">GPCR</button>
+        </div>
+
+        <div class="quizQ" data-answer="B">
+          <strong>3) IP3 berperan utama untuk…</strong>
+          <button class="opt" data-opt="A">Mengaktifkan GTPase pada Gα</button>
+          <button class="opt" data-opt="B">Melepaskan Ca²⁺ dari retikulum endoplasma</button>
+          <button class="opt" data-opt="C">Menghambat fosfatase</button>
+        </div>
+
+        <div class="quizQ" data-answer="A">
+          <strong>4) Dimerisasi dan autofosforilasi tirosin khas pada…</strong>
+          <button class="opt" data-opt="A">Receptor Tyrosine Kinase (RTK)</button>
+          <button class="opt" data-opt="B">Ligand-gated ion channel</button>
+          <button class="opt" data-opt="C">Gap junction</button>
+        </div>
+
+        <div class="quizQ" data-answer="C">
+          <strong>5) Mekanisme terminasi sinyal yang benar adalah…</strong>
+          <button class="opt" data-opt="A">cAMP selalu diproduksi tanpa henti</button>
+          <button class="opt" data-opt="B">Fosfatase menambah fosfat ke protein</button>
+          <button class="opt" data-opt="C">GTPase pada Gα mengubah GTP → GDP untuk mematikan sinyal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+<!-- ================= TENTANG SAYA (BAGIAN AKHIR) ================= -->
+<section id="tentang">
+  <div class="wrap">
+    <div class="title">Tentang Saya</div>
+    <div class="subtitle">
+      Bagian ini memuat identitas singkat pembuat serta tujuan pengembangan media pembelajaran
+      YOO BIO sebagai sarana belajar komunikasi antar sel secara visual dan interaktif.
+    </div>
+
+    <div class="about-grid">
+      <!-- Kartu Profil -->
+      <div class="about-card">
+        <div class="about-head">
+          <!-- Kalau kamu punya foto, ganti src -->
+          <!-- <img class="avatar" src="foto-saya.jpg" alt="Foto Pembuat"> -->
+          <div class="avatar" aria-hidden="true"></div>
+
+          <div>
+            <h3 class="about-name">Mugiono Rizkiyanto</h3>
+            <p class="about-role">Mahasiswa • Pendidikan Biologi</p>
+          </div>
+        </div>
+
+        <div class="about-info">
+          <p><b>Universitas Kuningan</b> </p>
+          <p><b>Fakultas Keguruan dan Ilmu Pendidikan</b> </p>
+          <p><b>Program Studi Pendidikan Biologi</b> </p>
+          <p><b>Mata Kuliah:</b> Biologi Sel Molekuler</p>
+          <p><b>Tahun:</b> 2026</p>
+        </div>
+
+        <div class="about-tags">
+          <span class="pill">Cell Signaling</span>
+          <span class="pill">Biologi Sel</span>
+          <span class="pill">E-Learning</span>
+          <span class="pill">Animasi</span>
+        </div>
+      </div>
+
+      <!-- Kartu Tujuan & Kontak -->
+      <div class="about-card">
+        <h3 class="about-subtitle">Tujuan Pengembangan</h3>
+        <p class="about-text">
+          YOO BIO dibuat untuk membantu pembelajaran komunikasi antar sel melalui penyajian materi
+          yang runtut, visual, dan interaktif. Media ini menggabungkan ringkasan konsep, jalur transduksi,
+          simulasi sederhana, serta video pendukung untuk memperkuat pemahaman.
+        </p>
+
+        <h3 class="about-subtitle" style="margin-top:18px;">Kontak</h3>
+        <p class="about-text">
+          <b>Email:</b> 20240210005@uniku.ac.id<br>
+          <b>Instagram:</b> @mugio.13<br>
+        </p>
+
+        <div class="about-note">
+          <b>Catatan:</b> Sumber video pendukung berasal dari YouTube untuk keperluan edukasi.
+          Simulasi dan desain web dibuat untuk pembelajaran.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ===== About Section Styling (nyambung dengan tema YOO BIO) ===== */
+  .about-grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+  @media(min-width: 960px){
+    .about-grid{
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .about-card{
+    background: rgba(15,23,42,0.55);
+    border: 1px solid rgba(148,163,184,0.18);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+
+  .about-head{
+    display:flex;
+    gap: 14px;
+    align-items:center;
+    margin-bottom: 14px;
+  }
+
+  /* Avatar placeholder (kalau belum ada foto) */
+  .avatar{
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: radial-gradient(circle at 30% 20%, #38bdf8, #6366f1);
+    border: 1px solid rgba(148,163,184,0.18);
+    box-shadow: 0 18px 40px rgba(56,189,248,0.15);
+    flex: 0 0 auto;
+  }
+
+  /* Kalau pakai foto, aktifkan ini */
+  /* .avatar{
+    object-fit: cover;
+  } */
+
+  .about-name{
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #e5e7eb;
+  }
+  .about-role{
+    margin-top: 4px;
+    color: rgba(229,231,235,0.7);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .about-info p{
+    margin: 8px 0;
+    color: rgba(229,231,235,0.8);
+    font-weight: 650;
+  }
+
+  .about-tags{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .about-subtitle{
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #38bdf8;
+    margin-bottom: 8px;
+  }
+
+  .about-text{
+    color: rgba(229,231,235,0.75);
+    font-weight: 650;
+    line-height: 1.7;
+  }
+
+  .about-note{
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(2,6,23,0.25);
+    border: 1px dashed rgba(148,163,184,0.25);
+    color: rgba(229,231,235,0.72);
+    font-weight: 650;
+  }
+</style>
+<!-- ================= AKHIR TENTANG SAYA ================= -->
+
+  <footer>
+    © 2026 YOO BIO — Project Biologi Sel Molekuler • Materi: <b>Komunikasi Antar Sel</b>
+  </footer>
+
+  <script>
+    /* ========= 1) Particles (aman tanpa GSAP juga) ========= */
+    const particles = document.getElementById('particles');
+    const N = 30;
+    for(let i=0;i<N;i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = (Math.random()*100) + 'vw';
+      p.style.top = (Math.random()*100) + 'vh';
+      p.style.transform = `scale(${0.7 + Math.random()*1.6})`;
+      particles.appendChild(p);
+    }
+
+    /* ========= 2) Scroll progress ========= */
+    const prog = document.getElementById('progress');
+    window.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const sc = (h.scrollTop) / (h.scrollHeight - h.clientHeight);
+      prog.style.width = (sc*100).toFixed(2) + '%';
+    });
+
+    /* ========= 3) Accordion ========= */
+    document.querySelectorAll(".accItem").forEach(item => {
+      const btn = item.querySelector(".accBtn");
+      const panel = item.querySelector(".accPanel");
+      btn.addEventListener("click", () => {
+        const open = item.classList.toggle("open");
+        panel.style.maxHeight = open ? (panel.scrollHeight + "px") : "0px";
+      });
+    });
+
+    /* ========= 4) Quiz scoring ========= */
+    let score = 0;
+    let answered = 0;
+    const scoreNow = document.getElementById("scoreNow");
+    const scoreMsg = document.getElementById("scoreMsg");
+
+    function updateScore(){
+      scoreNow.textContent = score;
+      if(answered < 5) scoreMsg.textContent = "Proses (" + answered + "/5)";
+      else{
+        if(score === 5) scoreMsg.textContent = "Mantap! ✅";
+        else if(score >= 3) scoreMsg.textContent = "Bagus! ⚡";
+        else scoreMsg.textContent = "Ulang materi dulu 📚";
+      }
+    }
+    updateScore();
+
+    document.querySelectorAll(".quizQ").forEach(q => {
+      const ans = q.dataset.answer;
+      const opts = q.querySelectorAll(".opt");
+      let locked = false;
+
+      opts.forEach(btn => {
+        btn.addEventListener("click", () => {
+          if(locked) return;
+          locked = true;
+          answered++;
+
+          const pick = btn.dataset.opt;
+          if(pick === ans){
+            btn.classList.add("correct");
+            score++;
+          }else{
+            btn.classList.add("wrong");
+            opts.forEach(b => { if(b.dataset.opt === ans) b.classList.add("correct"); });
+          }
+          updateScore();
+        });
+      });
+    });
+
+    /* ========= 5) GSAP Safe Mode (INI YANG BIKIN TEKS TIDAK HILANG) =========
+       - Kalau GSAP/ScrollTrigger gagal load, konten tetap tampil normal
+    */
+    const hasGSAP = typeof window.gsap !== "undefined";
+    const hasST   = typeof window.ScrollTrigger !== "undefined";
+
+    if (hasGSAP && hasST) {
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Animasi partikel (kalau GSAP tersedia)
+      document.querySelectorAll(".particle").forEach(p => {
+        gsap.to(p, {
+          y: "+=" + (60 + Math.random()*220),
+          x: "+=" + (-80 + Math.random()*160),
+          duration: 6 + Math.random()*8,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        });
+      });
+
+      // Reveal section (pakai fromTo supaya tidak stuck opacity 0)
+      gsap.utils.toArray("section").forEach((sec) => {
+        const target = sec.querySelector(".wrap") || sec;
+        gsap.fromTo(
+          target,
+          { opacity: 0, y: 60 },
+          {
+            opacity: 1, y: 0,
+            duration: 0.9,
+            ease: "power3.out",
+            scrollTrigger: { trigger: sec, start: "top 78%" }
+          }
+        );
+      });
+
+      // Active nav highlight
+      const navLinks = document.querySelectorAll("header nav a");
+      const ids = ["materi","reseptor","jalur","simulasi","kuis"];
+      ids.forEach(id => {
+        const sec = document.getElementById(id);
+        ScrollTrigger.create({
+          trigger: sec,
+          start: "top 25%",
+          end: "bottom 25%",
+          onEnter: () => setActive(id),
+          onEnterBack: () => setActive(id)
+        });
+      });
+      function setActive(id){
+        navLinks.forEach(a => a.classList.toggle("active", a.dataset.link === id));
+      }
+
+    } else {
+      // Fallback: tidak ada GSAP → pastikan semua tampil
+      document.querySelectorAll("section .wrap").forEach(el => {
+        el.style.opacity = 1;
+        el.style.transform = "none";
+      });
+    }
+
+    /* ========= 6) Simulasi (tetap jalan tanpa GSAP; kalau ada GSAP jadi lebih halus) ========= */
+    const modeTitle = document.getElementById("modeTitle");
+    const modeDesc  = document.getElementById("modeDesc");
+    const btnMode   = document.getElementById("btnMode");
+    const btnRun    = document.getElementById("btnRun");
+    const btnReset  = document.getElementById("btnReset");
+
+    const stageEl = document.querySelector(".stage");
+
+    const diagram = {
+      ligand: document.getElementById("ligand"),
+      ligandGlow: document.getElementById("ligandGlow"),
+      receptor: document.getElementById("receptor"),
+      receptorGlow: document.getElementById("receptorGlow"),
+      transducer: document.getElementById("transducer"),
+      transducerGlow: document.getElementById("transducerGlow"),
+      response: document.getElementById("response"),
+      responseGlow: document.getElementById("responseGlow"),
+      p1: document.getElementById("p1"),
+      p2: document.getElementById("p2"),
+      p3: document.getElementById("p3"),
+      p4: document.getElementById("p4"),
+      nucleus: document.getElementById("nucleus")
+    };
+
+    let modeIndex = 0;
+    const modes = [
+      {
+        name: "GPCR (cAMP / IP3-DAG)",
+        btn: "Mode Jalur: GPCR",
+        desc: "GPCR → G-protein → cAMP/PKA atau IP3-DAG/Ca²⁺/PKC.",
+        extraGene: false
+      },
+      {
+        name: "RTK (MAPK/ERK)",
+        btn: "Mode Jalur: RTK",
+        desc: "RTK → Ras → Raf → MEK → ERK → pengaruh ekspresi gen.",
+        extraGene: true
+      },
+      {
+        name: "JAK/STAT",
+        btn: "Mode Jalur: JAK/STAT",
+        desc: "Sitokin → JAK → STAT → nukleus → regulasi gen.",
+        extraGene: true
+      }
+    ];
+
+    function setMode(i){
+      modeIndex = i % modes.length;
+      const m = modes[modeIndex];
+      modeTitle.textContent = "Mode: " + m.name;
+      modeDesc.textContent = m.desc;
+      btnMode.textContent = m.btn;
+
+      // nucleus emphasis
+      if(hasGSAP){
+        gsap.to(diagram.nucleus, { duration: 0.35, opacity: m.extraGene ? 1 : 0.35, ease: "power2.out" });
+      } else {
+        diagram.nucleus.style.opacity = m.extraGene ? 1 : 0.35;
+      }
+    }
+    setMode(0);
+
+    btnMode.addEventListener("click", () => setMode(modeIndex + 1));
+
+    function resetDiagram(){
+      stageEl.classList.remove("on");
+      diagram.ligandGlow.style.opacity = 0.25;
+      diagram.receptorGlow.style.opacity = 0;
+      diagram.transducerGlow.style.opacity = 0;
+      diagram.responseGlow.style.opacity = 0;
+
+      [diagram.p1, diagram.p2, diagram.p3, diagram.p4].forEach(el => el.style.opacity = 0.25);
+
+      // reset ligand position
+      if(hasGSAP){
+        gsap.set(diagram.ligand, { x: 0, y: 0 });
+        gsap.set(diagram.ligandGlow, { x: 0, y: 0 });
+      } else {
+        diagram.ligand.setAttribute("transform","");
+        diagram.ligandGlow.setAttribute("transform","");
+      }
+    }
+    resetDiagram();
+    btnReset.addEventListener("click", resetDiagram);
+
+    btnRun.addEventListener("click", () => {
+      resetDiagram();
+      stageEl.classList.add("on");
+
+      const m = modes[modeIndex];
+
+      if(hasGSAP){
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        tl.to(diagram.ligandGlow, { opacity: 0.45, duration: 0.25 }, 0)
+          .to(diagram.ligand, { x: 170, y: 50, duration: 0.6 }, 0.05)
+          .to(diagram.ligandGlow, { x: 170, y: 50, duration: 0.6 }, 0.05)
+
+          .to(diagram.p1, { opacity: 0.95, duration: 0.25 }, 0.45)
+          .to(diagram.receptorGlow, { opacity: 0.55, duration: 0.25 }, 0.55)
+
+          .to(diagram.p2, { opacity: 0.95, duration: 0.25 }, 0.95)
+          .to(diagram.transducerGlow, { opacity: 0.55, duration: 0.25 }, 1.05)
+
+          .to(diagram.p3, { opacity: 0.95, duration: 0.25 }, 1.35)
+          .to(diagram.responseGlow, { opacity: 0.55, duration: 0.25 }, 1.50);
+
+        if(m.extraGene){
+          tl.to(diagram.p4, { opacity: 0.95, duration: 0.25 }, 1.85);
+        }
+      } else {
+        // fallback tanpa GSAP (langsung nyala)
+        diagram.ligandGlow.style.opacity = 0.45;
+        diagram.p1.style.opacity = 0.95;
+        diagram.receptorGlow.style.opacity = 0.55;
+        diagram.p2.style.opacity = 0.95;
+        diagram.transducerGlow.style.opacity = 0.55;
+        diagram.p3.style.opacity = 0.95;
+        diagram.responseGlow.style.opacity = 0.55;
+        if(m.extraGene) diagram.p4.style.opacity = 0.95;
+      }
+    });
+  </script>
+</body>
+</html>
